@@ -11,27 +11,39 @@ TEST(MQTTTopicMatch, Exact) {
   EXPECT_FALSE(topic_match("a/b/c", "a/b"));
   EXPECT_FALSE(topic_match("a/b", "a/b/c"));
   EXPECT_FALSE(topic_match("a/b/c", "a/b/d"));
+  EXPECT_FALSE(topic_match("ab/c", "a/c"));
 }
 
 TEST(MQTTTopicMatch, SingleLevelWildcard) {
   EXPECT_TRUE(topic_match("a/b/c", "a/+/c"));
   EXPECT_TRUE(topic_match("a/b/c", "+/+/+"));
   EXPECT_TRUE(topic_match("a//c", "a/+/c"));
+  EXPECT_TRUE(topic_match("a/", "a/+"));
   EXPECT_FALSE(topic_match("a/b/c", "a/+"));
   EXPECT_FALSE(topic_match("a/b/c/d", "a/+/c"));
+  EXPECT_FALSE(topic_match("a/b", "+xb"));
+  EXPECT_FALSE(topic_match("a/b", "a/+x"));
+  EXPECT_FALSE(topic_match("a/b/c", "a/+/xc"));
+  EXPECT_FALSE(topic_match("a/b", "a/x+"));
 }
 
 TEST(MQTTTopicMatch, MultiLevelWildcard) {
   EXPECT_TRUE(topic_match("a/b/c", "a/#"));
   EXPECT_TRUE(topic_match("a/b/c", "#"));
   EXPECT_TRUE(topic_match("a/b/c", "a/+/#"));
+  EXPECT_TRUE(topic_match("a/b", "a/+/#"));
+  EXPECT_TRUE(topic_match("a/b", "a/b/#"));
+  EXPECT_TRUE(topic_match("a", "a/#"));
   EXPECT_FALSE(topic_match("b/c", "a/#"));
+  EXPECT_FALSE(topic_match("a/b", "a/#x"));
+  EXPECT_FALSE(topic_match("a/b", "a/b/#x"));
 }
 
 TEST(MQTTTopicMatch, DollarTopicsSkipFirstLevelWildcards) {
   EXPECT_FALSE(topic_match("$SYS/broker", "#"));
   EXPECT_FALSE(topic_match("$SYS/broker", "+/broker"));
   EXPECT_TRUE(topic_match("$SYS/broker", "$SYS/#"));
+  EXPECT_TRUE(topic_match("$SYS", "$SYS/#"));
   EXPECT_TRUE(topic_match("$SYS/broker", "$SYS/+"));
 }
 
@@ -39,10 +51,9 @@ TEST(MQTTTopicMatch, EdgeCases) {
   EXPECT_TRUE(topic_match("", ""));
   EXPECT_FALSE(topic_match("a", ""));
   // MQTT wildcard levels may match zero characters / zero trailing levels.
-  EXPECT_TRUE(topic_match("a/b", "a/b/#"));
-  EXPECT_TRUE(topic_match("a", "a/#"));
   EXPECT_TRUE(topic_match("a/", "a/+"));
   EXPECT_TRUE(topic_match("a//", "a/+/+"));
+  EXPECT_TRUE(topic_match("a///", "a/+/+/+"));
   EXPECT_FALSE(topic_match("a", "a/+"));
   EXPECT_FALSE(topic_match("a/b", "a/+/c"));
   EXPECT_TRUE(topic_match("a/$x", "a/+"));

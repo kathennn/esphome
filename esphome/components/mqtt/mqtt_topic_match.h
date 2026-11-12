@@ -9,14 +9,20 @@ inline bool topic_match(const char *message, const char *subscription) {
   bool wildcards = *message != '$';
   while (true) {
     if (wildcards && *subscription == '#')
-      return true;  // # also matches zero remaining levels (for example, a/b/# matches a/b).
+      return subscription[1] == '\0';  // # must be the final level and also matches zero levels.
 
     if (wildcards && *subscription == '+') {
       subscription++;
       while (*message != '\0' && *message != '/')
         message++;
+      // A single-level wildcard must occupy the complete filter level.
+      if (*subscription != '\0' && *subscription != '/')
+        return false;
     } else {
       while (*subscription != '\0' && *subscription != '/') {
+        // MQTT wildcards are only valid as complete topic-filter levels.
+        if (*subscription == '+' || *subscription == '#')
+          return false;
         if (*message != *subscription)
           return false;
         message++;
